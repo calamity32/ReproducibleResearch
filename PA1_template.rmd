@@ -13,7 +13,7 @@ output:
 ### Load packages
 
 ```{r load-packages, message = FALSE}
-#None
+library(lattice)
 ```
 
 ## Loading and preprocessing the data
@@ -67,7 +67,7 @@ with(avgSteps, plot(interval,
                     steps,
                     col = "blue",
                     xlab="time",
-                    ylab="steps",
+                    ylab="avg steps",
                     type = "l"))
 ```
 
@@ -87,24 +87,53 @@ Note that there are a number of days/intervals where there are missing values (c
 
 1. Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with \color{red}{\verb|NA|}NAs)
 ```{r}
-
+c('Total number of days/intervals missing values',sum(is.na(dataFull$steps)))
 ```
 
 2. Devise a strategy for filling in all of the missing values in the dataset. The strategy does not need to be sophisticated. For example, you could use the mean/median for that day, or the mean for that 5-minute interval, etc.
 
+For any missing values, the rounded mean for that same 5 minute  time interval will be used to replace the NA.
+
 3. Create a new dataset that is equal to the original dataset but with the missing data filled in.
 ```{r}
-
+dataFull$NoNA <- ifelse(is.na(dataFull$steps), round(avgSteps$steps[match(dataFull$interval, avgSteps$interval)],0), dataFull$steps)
+head(dataFull)
 ```
 
 4. Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. 
 ```{r}
-
+spd2 <-aggregate(NoNA~date, dataFull, sum)
+hist(spd2$NoNA, 
+     xlab="Step Count", 
+     ylab="Num of Days", 
+     main="Total Number of Steps per Day - All data",
+     col="green",
+     breaks=c(0,2000,4000,6000,8000,10000,12000,14000,16000,18000,20000,22000),
+     xlim=c(0,25000))
+c('Mean',mean(spd2$NoNA))
+c('Median',median(spd2$NoNA))
 ```
 
   4.a. Do these values differ from the estimates from the first part of the assignment? 
+  Original values:
+"Mean"             "10766.1886792453"
+"Median" "10765" 
+New Values:
+"Mean"             "10765.6393442623"
+"Median" "10762"
+
+Yes, both the mean and median values dropped slightly with the data set contianing imputed data
 
   4.b. What is the impact of imputing missing data on the estimates of the total daily number of steps?
+  
+  For days that were mostly NA values, the totals increased significantly (See below 2012-10-01)
+  
+```{r}
+head(spd)
+head(spd2)
+
+```
+  
 
 * * *
 
@@ -114,10 +143,20 @@ For this part the \color{red}{\verb|weekdays()|}weekdays() function may be of so
 
 1. Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
 ```{r}
-
+dataFull$date<-as.Date(dataFull$date)
+dataFull$dayType <- ifelse(weekdays(dataFull$date)=='Saturday' | weekdays(dataFull$date)=='Sunday', 'weekend','weekday')
+head(dataFull)
 ```
 
 2. Make a panel plot containing a time series plot (i.e. \color{red}{\verb|type = "l"|}type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). See the README file in the GitHub repository to see an example of what this plot should look like using simulated data.
 ```{r}
+spd3 <-aggregate(steps~interval+dayType, dataFull, FUN=mean)
 
+xyplot(steps ~ interval | factor(dayType),
+       layout = c(1, 2),
+       col = "blue",
+       xlab="time",
+       ylab="avg steps",
+       type="l",
+       data=spd3)
 ```
